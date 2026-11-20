@@ -253,7 +253,7 @@ def route_after_approval(state: WorkflowState) -> str:
         and approval.get("artifact_sha256") == state.get("render_sha256")
         and approval.get("qc_report_id") == (state.get("qc_report") or {}).get("qc_report_id")
     )
-    if approval.get("decision") == "approved" and is_bound_to_current and qc_is_current(state):
+    if approval.get("decision") == "approved" and is_bound_to_current and qc_release_eligible(state):
         return "mock_publish"
     return "stop"
 
