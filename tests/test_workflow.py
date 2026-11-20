@@ -9,7 +9,7 @@ os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "true")
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
-from app.workflow import build_workflow, demo_input, qc_is_current
+from app.workflow import build_workflow, demo_input, qc_is_current, qc_release_eligible
 
 
 def config(thread_id: str) -> dict:
@@ -113,3 +113,35 @@ def test_qc_report_for_old_version_is_not_current():
         },
     }
     assert not qc_is_current(state)
+
+
+
+def test_qc_pass_requires_score_threshold_no_critical_findings_and_complete_inspection():
+    state = {
+        "video_id": "video-1",
+        "video_version": 1,
+        "render_sha256": "digest-1",
+        "render_artifact": {"sha256": "digest-1"},
+        "qc_status": "PASS",
+        "qc_report": {
+            "video_id": "video-1",
+            "video_version": 1,
+            "artifact_sha256": "digest-1",
+            "status": "PASS",
+            "score": 95,
+            "critical_findings": [],
+            "inspection_complete": True,
+        },
+    }
+    assert qc_release_eligible(state)
+
+    state["qc_report"]["score"] = 89
+    assert not qc_release_eligible(state)
+
+    state["qc_report"]["score"] = 95
+    state["qc_report"]["critical_findings"] = ["critical audio defect"]
+    assert not qc_release_eligible(state)
+
+    state["qc_report"]["critical_findings"] = []
+    state["qc_report"]["inspection_complete"] = False
+    assert not qc_release_eligible(state)
