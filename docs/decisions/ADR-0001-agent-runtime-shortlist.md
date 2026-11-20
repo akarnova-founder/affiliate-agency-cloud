@@ -167,3 +167,22 @@ Build a small, non-production workflow with mock agents and no paid provider cal
 This shortlist narrows the next engineering experiment while avoiding premature commitment to a production vendor stack. The final selection must be based on reproducible tests, current official pricing, licenses, terms, API access, and operational evidence.
 
 No tool listed in this ADR is currently installed, deployed, or integrated into the application by virtue of this document.
+
+## Licensing Clarification — Remotion
+
+Remotion must not be described as an OSI-approved open-source project. Its official terms describe it as source-available software under a proprietary Remotion License.
+
+The current official licensing pages state:
+- Individuals and organizations with up to three people may qualify for the Free License, including commercial use, subject to the terms.
+- Organizations that do not qualify may require a Company License.
+- The Remotion for Automators option is listed at $0.01 per successful render with a $100/month minimum for eligible Company License Users.
+- Remotion does not provide the cloud rendering infrastructure; the operator pays the cloud provider separately.
+- Eligibility depends on the actual organization and use case, not merely the number of developers touching the code.
+
+Official references checked on 2026-11-20:
+- https://www.remotion.dev/docs/license/faq
+- https://www.remotion.dev/docs/license/pricing
+- https://www.remotion.dev/docs/terms
+- https://www.remotion.dev/docs/render
+
+Therefore, Remotion remains only a rendering candidate. Before adoption, confirm the Owner's eligibility in writing or from the current license terms, and include both software licensing and cloud compute/storage/egress in the unit-cost model. If eligibility is unclear, evaluate FFmpeg-based or other appropriately licensed alternatives in parallel.
