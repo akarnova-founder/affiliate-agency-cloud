@@ -54,8 +54,17 @@ def main() -> None:
         config = _config(args.thread_id)
 
         if args.command == "start-demo":
+            # A thread ID identifies one persistent run. Reusing it would resume
+            # and append to the old checkpoint, making the event log look duplicated.
+            existing = graph.get_state(config)
+            if existing.values:
+                raise SystemExit(
+                    f"Thread '{args.thread_id}' already exists. "
+                    "Use a new --thread-id for a fresh demo, or use 'status' to inspect it."
+                )
+
             outcomes = [item.strip().upper() for item in args.qc_outcomes.split(",") if item.strip()]
-            result = graph.invoke(demo_input(outcomes), config)
+            graph.invoke(demo_input(outcomes), config)
             _print_state(graph, args.thread_id)
             if graph.get_state(config).next:
                 print("\nWorkflow paused. Review the exact version and use approve or reject.")
