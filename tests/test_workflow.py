@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import os
+import sys
 
 os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "true")
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
+from app import cli
 from app.workflow import build_workflow, demo_input, qc_is_current, qc_release_eligible
 
 
@@ -26,7 +28,7 @@ def test_happy_path_pauses_for_owner_and_resumes_after_reopening_db(tmp_path):
         snapshot = graph.get_state(config(thread_id))
         assert snapshot.next == ("owner_approval",)
         assert snapshot.values["qc_status"] == "PASS"
-        assert snapshot.values["workflow_status"] == "RUNNING"
+        assert snapshot.values["workflow_status"] == "AWAITING_OWNER_APPROVAL"
 
     # Reopen the same database to prove the interrupt/checkpoint survives process lifetime.
     with SqliteSaver.from_conn_string(str(db)) as saver:
@@ -48,6 +50,7 @@ def test_revision_creates_new_render_and_requires_new_qc(tmp_path):
         assert state["video_version"] == 2
         assert state["qc_status"] == "PASS"
         assert state["qc_report"]["video_version"] == 2
+        assert state["workflow_status"] == "AWAITING_OWNER_APPROVAL"
         assert qc_is_current(state)
         assert graph.get_state(config("test-revision")).next == ("owner_approval",)
 
@@ -115,7 +118,6 @@ def test_qc_report_for_old_version_is_not_current():
     assert not qc_is_current(state)
 
 
-
 def test_qc_pass_requires_score_threshold_no_critical_findings_and_complete_inspection():
     state = {
         "video_id": "video-1",
@@ -145,3 +147,25 @@ def test_qc_pass_requires_score_threshold_no_critical_findings_and_complete_insp
     state["qc_report"]["critical_findings"] = []
     state["qc_report"]["inspection_complete"] = False
     assert not qc_release_eligible(state)
+
+
+def test_cli_refuses_to_reuse_existing_thread_id(tmp_path, monkeypatch, capsys):
+    db = tmp_path / "cli.sqlite"
+    monkeypatch.setattr(cli, "DEFAULT_DB", str(db))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["app.cli", "start-demo", "--thread-id", "duplicate-thread"],
+    )
+
+    cli.main()
+    first_output = capsys.readouterr().out
+    assert "Workflow paused" in first_output
+
+    try:
+        cli.main()
+    except SystemExit as exc:
+        assert "already exists" in str(exc)
+        assert "new --thread-id" in str(exc)
+    else:
+        raise AssertionError("CLI must reject a reused thread ID.")
