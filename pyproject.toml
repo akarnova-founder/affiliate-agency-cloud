@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "affiliate-agency-cloud"
+version = "0.1.0"
+description = "Cloud-first multi-agent affiliate content workflow prototype"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary project; dependency licenses are evaluated separately" }
+dependencies = [
+  "langgraph>=1.0,<2.0",
+  "langgraph-checkpoint-sqlite>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<10.0",
+]
+
+[project.scripts]
+affiliate-agency = "app.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
