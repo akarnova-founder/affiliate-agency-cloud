@@ -148,12 +148,17 @@ def quality_control(state: WorkflowState) -> dict[str, Any]:
         "inspection_type": "MOCK_WORKFLOW_TEST_ONLY",
         "inspection_complete": outcome == "PASS",
     }
-    return {
+    update = {
         "qc_cursor": cursor + 1,
         "qc_status": outcome,
         "qc_report": report,
         "event_log": [event("mock_qc_completed", status=outcome, video_version=version)],
     }
+    # A passing QC after a revision must replace REVISION_IN_PROGRESS with the
+    # actual next state. The graph will pause at owner_approval after this node.
+    if outcome == "PASS":
+        update["workflow_status"] = "AWAITING_OWNER_APPROVAL"
+    return update
 
 
 def route_after_qc(state: WorkflowState) -> str:
