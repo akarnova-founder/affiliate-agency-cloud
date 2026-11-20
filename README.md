@@ -43,6 +43,12 @@ QC uses a 100-point score with a target of at least 90. Critical defects block P
 - `docs/TOOL_EVALUATION.md` — open-source, API, provider, license, and cost evaluation policy.
 - `agents/` — role specifications for the Manager and specialist agents.
 
+## Workflow prototype
+
+A deterministic LangGraph proof of concept is available in `app/`. It uses mock agents, SQLite checkpoints, revision/QC gates, and a simulated Owner approval pause. It does not call paid AI APIs, render media, or publish to social platforms.
+
+See [POC Quickstart](docs/POC_QUICKSTART.md) to run it locally. See [ADR-0002](docs/decisions/ADR-0002-langgraph-poc.md) for scope, limitations, and acceptance tests.
+
 ## Development approach
 
 Build in verified increments:
