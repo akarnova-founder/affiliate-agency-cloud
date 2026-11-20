@@ -35,6 +35,18 @@ def qc_is_current(state: WorkflowState) -> bool:
     )
 
 
+def qc_release_eligible(state: WorkflowState) -> bool:
+    """Enforce the release score, critical-finding, and inspection-completeness gates."""
+    report = state.get("qc_report") or {}
+    return bool(
+        state.get("qc_status") == "PASS"
+        and qc_is_current(state)
+        and report.get("score", 0) >= 90
+        and not report.get("critical_findings")
+        and report.get("inspection_complete") is True
+    )
+
+
 def product_researcher(state: WorkflowState) -> dict[str, Any]:
     name = state.get("product_name", "Unspecified sample product")
     return {
@@ -134,6 +146,7 @@ def quality_control(state: WorkflowState) -> dict[str, Any]:
         "score": 100 if outcome == "PASS" else 60,
         "critical_findings": [],
         "inspection_type": "MOCK_WORKFLOW_TEST_ONLY",
+        "inspection_complete": outcome == "PASS",
     }
     return {
         "qc_cursor": cursor + 1,
@@ -145,7 +158,7 @@ def quality_control(state: WorkflowState) -> dict[str, Any]:
 
 def route_after_qc(state: WorkflowState) -> str:
     status = state.get("qc_status")
-    if status == "PASS" and qc_is_current(state):
+    if status == "PASS" and qc_release_eligible(state):
         return "owner_approval"
     if status == "REVISE" and state.get("revision_attempts", 0) < MAX_AUTOMATIC_REVISIONS:
         return "revise_video"
@@ -198,8 +211,8 @@ def owner_approval(state: WorkflowState) -> dict[str, Any]:
         f"approval:{state['campaign_id']}:{state['video_id']}:"
         f"v{state['video_version']}:{state['render_sha256'][:12]}"
     )
-    if state.get("qc_status") != "PASS" or not qc_is_current(state):
-        raise ValueError("Owner approval is locked: latest render does not have a current QC PASS.")
+    if not qc_release_eligible(state):
+        raise ValueError("Owner approval is locked: latest render does not meet all QC release gates.")
 
     decision = interrupt(
         {
