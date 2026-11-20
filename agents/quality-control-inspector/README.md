@@ -357,3 +357,23 @@ A task marked QC_INCOMPLETE or NEEDS_HUMAN_REVIEW is not a release approval.
 - Preserve reports, evidence references, and revision history.
 - Escalate ambiguous, high-impact, or out-of-scope issues to human review.
 - Treat missing evidence as an explicit limitation, not as proof of compliance.
+
+## Shared Data Contract and Traceability
+
+All inputs, outputs, and agent handoffs must comply with `docs/SHARED_DATA_CONTRACT.md`. That document is the canonical source for identifier formats, handoff envelopes, artifact references, versioning, statuses, evidence, and approval binding.
+
+For each task, preserve all applicable identifiers:
+- `campaign_id`
+- `product_id`
+- `content_id`
+- `video_id`
+- `task_id`
+- `run_id`
+
+Every output must identify its producer agent, deliverable type, deliverable version, status, creation timestamp, input artifact references, output artifact references, summary, warnings, unresolved questions, and proposed next action.
+
+Use immutable artifact references with checksums for files used by downstream agents, QC, approval, or publication. Never overwrite an artifact already referenced by an inspection or approval record.
+
+Distinguish agent task completion from QC approval, Owner approval, and publication status. Do not infer approval from a successful task. Missing facts, metrics, sources, or verification must remain explicitly unknown or incomplete rather than being fabricated.
+
+The AI Manager validates the handoff and controls workflow transitions. Agents must not bypass dependencies, revise the canonical contract independently, authorize publication, or claim that downstream work has succeeded before confirmation.
